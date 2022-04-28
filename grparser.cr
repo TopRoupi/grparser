@@ -49,6 +49,9 @@ if selected_action == "1"
 
   file_table = {} of String => File | Dir
 
+  string = string.delete("\n")
+  string = string.gsub("\\...n", "\\n")
+
   table = Hash(String, Hash(String, String)).from_json(string)
   table.each do |key, value|
     if value["parent"] == ""
@@ -115,5 +118,5 @@ if selected_action == "2"
   folder = Dir.open full_path
   export_obj = get_folder_table(folder)
   puts "this is your export string:"
-  puts export_obj.to_json
+  puts export_obj.to_json.gsub("\\n", "\\...n")
 end
