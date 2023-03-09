@@ -1,6 +1,8 @@
 require "option_parser"
 require "json"
 
+require "greyparser/compressor"
+
 option_parser = OptionParser.parse do |parser|
   parser.banner = "grey repo parser (www.greyrepo.xyz/posts/folder-parser)"
 
@@ -70,7 +72,7 @@ if selected_action == "1"
     else
       File.touch(file_path)
       file = File.open(file_path)
-      File.write(file_path, value["content"])
+      File.write(file_path, Compressor.decompress(value["content"]).to_s)
     end
     file_table[key] = file
     puts "created #{value["type"]} #{file_path}"
@@ -100,7 +102,10 @@ def get_folder_table(folder, table = {} of String => Hash(Symbol, String), paren
 
   scripts.each do |script|
     file_name = script.path.split("/").last
-    obj = {parent: parent, type: "script", name: file_name, content: File.read(script.path)}.to_h
+    file_content = Compressor.compress(File.read(script.path)).to_s
+
+    obj = {parent: parent, type: "script", name: file_name, content: file_content}.to_h
+
     table[index.to_s] = obj
     index += 1
   end
@@ -118,5 +123,11 @@ if selected_action == "2"
   folder = Dir.open full_path
   export_obj = get_folder_table(folder)
   puts "this is your export string:"
-  puts export_obj.to_json.gsub("\\n", "\\...n")
+
+  export_string = export_obj.to_json.gsub("\\n", "\\...n")
+
+  File.delete "/tmp/output" if File.exists? "/tmp/output"
+  # File.new("/tmp/output")
+  File.write("/tmp/output", export_string)
+  system "#{editor} /tmp/output"
 end
